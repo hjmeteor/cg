@@ -1,6 +1,8 @@
 #include "demo2.h"
 #include "Ray.h"
 #include "Object.h"
+#define DEPTH1 3
+#define INFINITY1 1e8
 
 //window resolution (default 640x480)
 int windowX = 640;
@@ -11,28 +13,22 @@ int windowY = 480;
 glm::mat4 viewMatrix; //The transformation matrix for the virtual camera
 
 //An object in the scene
-glm::vec3 c(0.0f);
-float r = 1.0f;
-Material::Material():
-ambient(1.0f),//Default to white
-diffuse(1.0f),//Default to white
-specular(1.0f),//Default to white
-specularExponent(10.0f)//Used in lighting equation
-{
-}
+Object* object = NULL;
 
-//Constructor
-//@transform The transformation matrix for the object
-//@material The material properties of the object
-Object::Object(const glm::mat4 &transform,const Material &material):
-_transform(transform),
-_material(material)
-{
-}
+glm::vec3 a(10.0f,10.0f,0.0f);
+glm::vec3 b(60.0f,60.0f,0.0f);
+glm::vec3 c(120.0f,120.0f,0.0f);
+Triangle t(a, b, c);
 
-Sphere* sphere = NULL;
-Object* object = sphere;
 
+glm::vec3 p0(0.0f, -10.0f, -50.0f );
+glm::vec3 n(0.0f, 1.0f, 1.0f);
+Plane p(p0, n);
+
+
+glm::vec3 center(-10.0f, 40.0f, 50.0f);
+float r = 50.0;
+Sphere s(center, r);
 
 //Perform any cleanup of resources here
 void cleanup()
@@ -47,20 +43,35 @@ bool CheckIntersection(const Ray &ray, IntersectInfo &info);
 float CastRay(Ray &ray, Payload &payload);
 
 //Function for testing for intersection with all the objects in the scene
-//If an object is hit then info contains the information on the intersection,
+//If an object is hit then info contains the information on the intersection, 
 //returns true if an object is hit, false otherwise
 bool CheckIntersection(const Ray &ray, IntersectInfo &info)
 {
-	// float b = 2 * (xd * (xs - xc));
-	// float c = ray.origin * ray.origin - 1.1;
-	// float disc = (b * b - 4 * c);
-	// if(disc < 0)
-	// 	return false;
-	// else{
-	// 	return true;
+	// Test here for intersection of ray with nearest object
+	float tNear = INFINITY1;
+	IntersectInfo near_info;
+	bool if_intersect = false;
+	// if(p.Intersect(ray, info) && info.time < tNear) {
+	// 	near_info = info;
+	// 	tNear = near_info.time;
+	// 	if_intersect = true;
 	// }
-	//Test here for intersection of ray with nearest object
-	return true;
+	if(t.Intersect(ray, info) && info.time < tNear) {
+		near_info = info;
+		tNear = near_info.time;
+		if_intersect = true;
+	}
+	if(s.Intersect(ray, info) && info.time < tNear) {
+		near_info = info;
+		tNear = near_info.time;
+		if_intersect = true;
+	}
+	if(if_intersect == true){
+		info = near_info;
+		return true;
+	}
+	else
+		return false;
 }
 
 //Recursive ray-casting function
@@ -68,15 +79,48 @@ bool CheckIntersection(const Ray &ray, IntersectInfo &info)
 //@ray The ray we are casting
 //@payload Information on the current ray i.e. the cumulative color and the number of bounces it has performed
 //returns either the time of intersection with an object (the coefficient t in the equation: RayPosition = RayOrigin + t*RayDirection) or zero to indicate no intersection
+
 float CastRay(Ray &ray, Payload &payload)
 {
 	//Perform early termination here (use number of bounces)
 	//Check if the ray intersects something
-	IntersectInfo info;
-	if(CheckIntersection(ray,info)){
-		return 1.0f;
+	
+	if(payload.numBounces == DEPTH1)
+		return 0.0f;
+	else{
+		IntersectInfo info;
+		if(CheckIntersection(ray,info)){		
+			glm::vec3 lightPos(-60.0f, 90.0f, 100.0f);
+			// lightPos = glm:normalize(lightPos);
+			glm::vec3 norm = info.normal;
+			float diff = info.material -> diffuse.x;
+			float spec = info.material -> specular.x;
+			float ambient = info.material -> ambient.x;
+		//	set a value to the light intensity
+			float light_inten = 1.0f;
+		//	set a value to the specular intensity
+			float spec_inten = 80.0f;
+		//  calculate the cos_theta where theta is the angle between the normal vector of the vertex and the direction to the light source
+			float cos_theta = glm::dot(lightPos, norm);
+		//  calculate the cos_alpha where alpha is the angle between the reflected incoming light and the direction to the camera
+			// float cos_alpha = glm::dot(2 * glm::dot(lightPos, norm) * norm - lightPos, ray.direction);
+			glm::vec3 h = glm::normalize(lightPos + ray.direction);
+		//  calculate the diffuse reflection, specular reflection and the ambient
+			float d = abs(light_inten * diff * cos_theta);
+			// float sp = abs(light_inten * spec * pow(cos_alpha, spec_inten));
+			// float sp;
+			
+			float sp = light_inten * spec * pow(max(glm::dot(norm, h),0.0f), spec_inten);
+			
+			float a = abs(light_inten * ambient);
+		//  The values of cos_theta and cos_alpha should be set to 0 if they are negative
+			payload.numBounces ++;
+			return a + d + sp;
+		}
+		else
+			return 0.0f;
 	}
-	return 0.0f;
+	
 }
 
 /*--- Display Function ---*/
@@ -98,7 +142,7 @@ void DemoDisplay()
 	float fov = 90.0f;
 	//Value for adjusting the pixel position to account for the field of view
 	float fovAdjust = tan(fov*0.5f *(M_PI/180.0f));
-
+	
 	//Tell OpenGL to start rendering points
 	glBegin(GL_POINTS);
 	//Iterate over each pixel in the image
@@ -113,7 +157,7 @@ void DemoDisplay()
 			float pixelScreenX = 2.0f*pixelNormX - 1.0f;
 			float pixelScreenY = 1.0f-2.0f*pixelNormY;
 
-			//Account for Field of View
+			//Account for Field of View			
 			float pixelCameraX = pixelScreenX * fovAdjust;
 			float pixelCameraY = pixelScreenY * fovAdjust;
 
@@ -133,21 +177,21 @@ void DemoDisplay()
 			//Set up ray in world space
 			Ray ray(glm::vec3(rayOrigin), //The origin of the ray we are casting
 				glm::normalize(glm::vec3(pixelCameraSpace - rayOrigin))//The direction the ray is travelling in
-			);
+			);	
 
 			//Structure for storing the information we get from casting the ray
-			Payload payload;
+			Payload payload;			
 
 			//Default color is white
 			glm::vec3 color(1.0f);
-
+			// glm::vec3 c(0.0f);
+			// Sphere s(c, 1.0f);
 			//Cast our ray into the scene
 			if(CastRay(ray,payload) > 0.0f){// > 0.0f indicates an intersection
 				color = ray.direction;
-			}
+			}	
 			//Get OpenGL to render the pixel with the color from the ray
 			glColor3f(color.x,color.y,color.z);
-
 			glVertex3f(pixelScreenX,pixelScreenY,0.0f);
 		}
 	}
@@ -184,12 +228,12 @@ int main(int argc, char **argv)
 	//initialise OpenGL
 	glutInit(&argc, argv);
 	//Define the window size with the size specifed at the top of this file
-	glutInitWindowSize(windowX, windowY);
+	glutInitWindowSize(windowX, windowY);	
 
 	//Create the window for drawing with the title "SimpleExample"
-	glutCreateWindow("CG-CW2");
+	glutCreateWindow("CG-CW2");	
 
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);	
 
 	//Set the function demoDisplay (defined above) as the function that
 	//is called when the window must display
