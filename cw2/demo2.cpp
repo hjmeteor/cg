@@ -151,30 +151,7 @@ float CastRay(Ray &ray, Payload &payload)
 {
 	//Perform early termination here (use number of bounces)
 	//Check if the ray intersects something
-	if(payload.numBounces < RECURSION_DEPTHE){
-		float refraction_index = info.material -> refraction_index;
-		glm::vec3 norm = info.normal;
-		Ray reflectionRay;
-		Ray refractionRay;
-		reflectionRay.origin = info.hitPoint;
-		reflectionRay.direction = glm::reflect(lightPos, norm);
-		refractionRay.origin = info.hitPoint;
-		refractionRay.direction = glm::refract(lightPos, norm, refraction_index);
-		float reflectionColor, refractionColor;
-		CastRay(reflectionRay, payload.numBounces + 1);
-		reflectionColor = payload.color.x;
-		CastRay(refractionColor, payload.numBounces + 1);
-		refractionColor = payload.color.y;
-		float kr, kt;
-		fresnel(
-            object->indexOfRefraction,
-            nHit,
-            ray.direction,
-            &Kr,
-            &Kt);
-		payload.color(reflectionColor * Kr + refractionColor * (1 - Kr));
-		return 1.0f;
-	}
+
 	IntersectInfo info;
 	if(CheckIntersection(ray,info)){
 		// lightPos = glm:normalize(lightPos);
@@ -217,9 +194,34 @@ float CastRay(Ray &ray, Payload &payload)
 			payload.color = color;
 			return 1.0f;
 		}
-		return 1.0f;
 	}
 
+	if(payload.numBounces < RECURSION_DEPTHE){
+		float refraction_index = info.material -> refraction_index;
+		glm::vec3 norm = info.normal;
+		Ray reflectionRay;
+		Ray refractionRay;
+		reflectionRay.origin = info.hitPoint;
+		reflectionRay.direction = glm::reflect(lightPos, norm);
+		refractionRay.origin = info.hitPoint;
+		refractionRay.direction = glm::refract(lightPos, norm, refraction_index);
+		float reflectionColor, refractionColor;
+		CastRay(reflectionRay, payload.numBounces + 1);
+		reflectionColor = payload.color.x;
+		CastRay(refractionColor, payload.numBounces + 1);
+		refractionColor = payload.color.y;
+		float kr, kt;
+		fresnel(
+            object->indexOfRefraction,
+            nHit,
+            ray.direction,
+            &Kr,
+            &Kt);
+		payload.color(reflectionColor * Kr + refractionColor * (1 - Kr));
+
+	}
+	else
+	return 1.0f;
 }
 
 /*--- Display Function ---*/
