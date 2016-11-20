@@ -12,6 +12,7 @@ public:
 	glm::vec3 diffuse;
 	glm::vec3 specular;
 	float specularExponent;
+	float reflection_index;
 	float refraction_index;
 	//TODO add further material values here such as reflection/refraction index
 };
