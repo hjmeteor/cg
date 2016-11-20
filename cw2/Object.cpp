@@ -6,8 +6,9 @@ Material::Material():
 ambient(0.6f),//Default to white
 diffuse(0.6f),//Default to white
 specular(1.0f),//Default to white
-specularExponent(10.0f)//Used in lighting equation
-float refraction_index(0.5f)
+specularExponent(10.0f),//Used in lighting equation
+reflection_index(0.8f),
+refraction_index(0.5f)
 {
 }
 

@@ -88,12 +88,11 @@ public:
 
 		float ndd = glm::dot(n, ray.direction);
 		// check if ray and plane are parallel ?
-		if (fabs(nnd) < 0.0001f){ // almost 0
+		if (fabs(ndd) < 0.0001f){ // almost 0
 			return false;
 		}
 		float d = glm::dot(n, p0);
-		flaot t = -(glm::dot(n, ray.origin)) + d) / ndd
-
+		float t = -(glm::dot(n, ray.origin) + d) / ndd;
 		// check if the triangle is in behind the ray
     	if (t < 0.0f){
 			return false; // the triangle is behind
@@ -108,20 +107,20 @@ public:
 	    // edge 0
 	    glm::vec3 edge0(p1 - p0);
 	    glm::vec3 hit_p0(info.hitPoint - p0);
-		c = glm::crossProduct(edge0, hit_p0);
-	    if (glm::dotProduct(n, c) < 0.0f) return false; // P is on the right side
+		c = glm::cross(edge0, hit_p0);
+	    if (glm::dot(n, c) < 0.0f) return false; // P is on the right side
 
 	    // edge 1
 		glm::vec3 edge1(p2 - p1);
 	    glm::vec3 hit_p1(info.hitPoint - p1);
-		c = glm::crossProduct(edge1, hit_p1);
-	    if (glm::dotProduct(n, c) < 0.0f) return false;// P is on the right side
+		c = glm::cross(edge1, hit_p1);
+	    if (glm::dot(n, c) < 0.0f) return false;// P is on the right side
 
 	    // edge 2
 		glm::vec3 edge2(p0 - p2);
 	    glm::vec3 hit_p2(info.hitPoint - p2);
-		c = glm::crossProduct(edge2, hit_p2);
-	    if (glm::dotProduct(n, c) < 0.0f) return false; // P is on the right side;
+		c = glm::cross(edge2, hit_p2);
+	    if (glm::dot(n, c) < 0.0f) return false; // P is on the right side;
 
 	    return true; // this ray hits the triangle
 
@@ -160,11 +159,9 @@ public:
 class Plane:public Object
 {
 public:
-	Plane(const glm::vec3 &p0, const glm::vec3 &n):p0(p0),n(n){};
+	Plane(const glm::vec3 &p0, const glm::vec3 &n):p0(glm::normalize(p0)),n(glm::normalize(n)){};
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
-		n = glm::normalize(n);
-		p0 = glm::normalize(p0);
 		float np = glm::dot(n, p0);
 		float nd = glm::dot(n, glm::normalize(ray.direction));
 		if(nd < 1e-6) return false;

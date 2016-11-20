@@ -40,9 +40,9 @@ glm::vec3 center(-200.0f, 40.0f, 50.0f);
 float r = 50.0;
 Sphere s(center, r);
 
-glm::vec3 center(200.0f, 40.0f, 50.0f);
-float r = 30.0;
-Sphere s2(center, r);
+glm::vec3 center2(200.0f, 40.0f, 50.0f);
+float r2 = 30.0;
+Sphere s2(center2, r2);
 
 //Perform any cleanup of resources here
 void cleanup()
@@ -111,15 +111,19 @@ float CastRay(Ray &ray, Payload &payload)
 	//Check if the ray intersects something
 
 	IntersectInfo info;
+	//Default light position
+	glm::vec3 lightPos(-60.0f, 90.0f, 100.0f);
+	//	set a value to the light intensity
+	float light_inten = 1.0f;
 	if(CheckIntersection(ray,info)){
 		float ambient = info.material -> ambient.x;
 		float a = max(light_inten * ambient, 0.0f);
-		payload.color = payload.color + glm::ve3(a*0.0f, a*0.0f, a*1.0f);
+		payload.color = payload.color + glm::vec3(a*0.0f, a*0.0f, a*1.0f);
 
 		//comput shadow(for each light, but here i use point light)
-		Ray shadowRay;
-		shadowRay.direction = lightPos - info.hitPoint;
-		shadowRay.origin = info.hitPoint;
+		Ray shadowRay(glm::vec3(info.hitPoint), 
+				glm::normalize(glm::vec3(lightPos - info.hitPoint))
+		);
 		if(CheckIntersection(shadowRay, info)){
 			// hit point is in shadow so just return
 			glm::vec3 color(0.0f);
@@ -152,25 +156,28 @@ float CastRay(Ray &ray, Payload &payload)
 		}
 
 		if(payload.numBounces < RECURSION_DEPTHE){
+			glm::vec3 lightVec = lightPos - info.hitPoint;
 			float reflection_index = info.material -> reflection_index;
 			if(reflection_index > 0.0f){
 				glm::vec3 norm = info.normal;
 				glm::vec3 lightVec = lightPos - info.hitPoint;
-				Ray reflectionRay;
-
-				reflectionRay.origin = info.hitPoint;
-				reflectionRay.direction = glm::reflect(lightPos, norm);
-				CastRay(reflectionRay, payload.numBounces + 1);
+				Ray reflectionRay(glm::vec3(info.hitPoint), 
+						glm::normalize(glm::reflect(lightVec, norm))
+				);
+				payload.numBounces += 1;
+				CastRay(reflectionRay, payload);
 				payload.color = payload.color + reflection_index * payload.color;
 			}
 			float refraction_index = info.material -> refraction_index;
 			if(refraction_index > 0.0f){
 				glm::vec3 norm = info.normal;
 				glm::vec3 lightVec = lightPos - info.hitPoint;
-				Ray refractionRay;
-				refractionRay.origin = info.hitPoint;
-				refractionRay.direction = glm::refract(lightPos, norm, refraction_index);
-				CastRay(refractionColor, payload.numBounces + 1);
+				
+				Ray refractionRay(glm::vec3(info.hitPoint), 
+						glm::normalize(glm::refract(lightVec, norm, refraction_index))
+				);
+				payload.numBounces += 1;
+				CastRay(refractionRay, payload);
 				payload.color = payload.color + refraction_index * payload.color;
 			}
 		}
@@ -317,15 +324,11 @@ void DemoDisplay()
 			//Default color is white
 			glm::vec3 color(1.0f);
 
-			//Default light position
-			glm::vec3 lightPos(-60.0f, 90.0f, 100.0f);
-			//	set a value to the light intensity
-			float light_inten = 1.0f;
 
 			//Cast our ray into the scene
 			//Payload record the final color after cast ray
 			if(CastRay(ray,payload) > 0.0f){// > 0.0f indicates an intersection
-				color = payload.color.x;
+				color = payload.color;
 			}
 			//Get OpenGL to render the pixel with the color from the ray
 			glColor3f(color.x,color.y,color.z);
