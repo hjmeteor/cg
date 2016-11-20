@@ -25,24 +25,24 @@ Object* object = NULL;
 
 //What I implement
 //Define a triangel, a plane and two sphere in the scene
-glm::vec3 a(10.0f,10.0f,0.0f);
-glm::vec3 b(60.0f,60.0f,0.0f);
-glm::vec3 c(120.0f,120.0f,0.0f);
-Triangle t(a, b, c);
+glm::vec3 a(200.0f,50.0f,0.0f);
+glm::vec3 b(102.0f,-20.0f,0.0f);
+glm::vec3 c(250.0f,-40.0f,0.0f);
+Triangle t(a, b, c, glm::vec3(0.9f,0.0f,0.0f));
 
 
-glm::vec3 p0(0.0f, -10.0f, -50.0f );
-glm::vec3 n(0.0f, 1.0f, 1.0f);
-Plane p(p0, n);
+glm::vec3 p0(0.0f, -400.0f, 0.0f );
+glm::vec3 n(0.0f, -1.0f, 0.0f);
+Plane p(p0, n, glm::vec3(0.752f,0.752f,0.752f));
 
 
-glm::vec3 center(-200.0f, 40.0f, 50.0f);
-float r = 50.0;
-Sphere s(center, r);
+glm::vec3 center(-50.0f, 0.0f, 0.0f);
+float r = 40.0;
+Sphere s(center, r, glm::vec3(0.0f,0.0f,1.0f));
 
-glm::vec3 center2(200.0f, 40.0f, 50.0f);
-float r2 = 30.0;
-Sphere s2(center2, r2);
+glm::vec3 center2(50.0f, 0.0f, 0.0f);
+float r2 = 50.0;
+Sphere s2(center2, r2, glm::vec3(0.0f,1.0f,0.0f));
 
 //Perform any cleanup of resources here
 void cleanup()
@@ -69,22 +69,22 @@ bool CheckIntersection(const Ray &ray, IntersectInfo &info)
 	// Used to record the nearest object's information of intersection
 	IntersectInfo near_info;
 	bool is_intersect = false;
-	// if(p.Intersect(ray, info) && info.time < tNear) {
-	// 	near_info = info;
-	// 	tNear = near_info.time;
-	// 	if_intersect = true;
-	// }
-	// if(t.Intersect(ray, info) && info.time < tNear) {
-	// 	near_info = info;
-	// 	tNear = near_info.time;
-	// 	if_intersect = true;
-	// }
-	if(s.Intersect(ray, info) && info.time < tNear) {
+	if(p.Intersect(ray, info) && info.time < tNear && info.time > 0) {
 		near_info = info;
 		tNear = near_info.time;
 		is_intersect = true;
 	}
-	if(s2.Intersect(ray, info) && info.time < tNear) {
+	if(t.Intersect(ray, info) && info.time < tNear && info.time > 0) {
+		near_info = info;
+		tNear = near_info.time;
+		is_intersect = true;
+	}
+	if(s.Intersect(ray, info) && info.time < tNear && info.time > 0) {
+		near_info = info;
+		tNear = near_info.time;
+		is_intersect = true;
+	}
+	if(s2.Intersect(ray, info) && info.time < tNear && info.time > 0) {
 		near_info = info;
 		tNear = near_info.time;
 		is_intersect = true;
@@ -116,12 +116,13 @@ float CastRay(Ray &ray, Payload &payload)
 	//	set a value to the light intensity
 	float light_inten = 1.0f;
 	if(CheckIntersection(ray,info)){
+		glm::vec3 obj_color = info.color;
 		float ambient = info.material -> ambient.x;
 		float a = max(light_inten * ambient, 0.0f);
-		payload.color = payload.color + glm::vec3(a*0.0f, a*0.0f, a*1.0f);
+		payload.color = payload.color + a * obj_color;
 
-		//comput shadow(for each light, but here i use point light)
-		Ray shadowRay(glm::vec3(info.hitPoint), 
+		// comput shadow(for each light, but here i use point light)
+		Ray shadowRay(glm::vec3(info.hitPoint + 0.001f), 
 				glm::normalize(glm::vec3(lightPos - info.hitPoint))
 		);
 		if(CheckIntersection(shadowRay, info)){
@@ -149,12 +150,10 @@ float CastRay(Ray &ray, Payload &payload)
 			// float sp;
 
 			float sp = max(light_inten * spec * pow(max(glm::dot(norm, h),0.0f), specularExponent), 0.0f);
-
 		//  The values of cos_theta and cos_alpha should be set to 0 if they are negative
-			glm::vec3 color((d + sp)*0.0f, (d + sp)*0.0f, (d + sp)*0.1f);
+			glm::vec3 color = obj_color * (d + sp);
 			payload.color = payload.color + color;
 		}
-
 		if(payload.numBounces < RECURSION_DEPTHE){
 			glm::vec3 lightVec = lightPos - info.hitPoint;
 			float reflection_index = info.material -> reflection_index;

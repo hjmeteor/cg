@@ -46,7 +46,7 @@ protected:
 class Sphere:public Object
 {
 public:
-	Sphere(const glm::vec3 &c, const float &r):radius(r), radius2(r * r), center(c){};
+	Sphere(const glm::vec3 &c, const float &r, const glm::vec3 &color):radius(r), radius2(r * r), center(c), color(color){};
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
 		float t = 0.0;
@@ -68,18 +68,20 @@ public:
 		info.material = &_material;
 		info.hitPoint = ray(t);
 		info.normal = ray(t) - center;
+		info.color = color;
 		return true;
 	}
 
 	float radius, radius2;
 	glm::vec3 center;
+	glm::vec3 color;
 };
 
 //What I implement
 class Triangle:public Object
 {
 public:
-	Triangle(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2):p0(p0), p1(p1), p2(p2){};
+	Triangle(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &color):p0(p0), p1(p1), p2(p2), color(color){};
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
 		glm::vec3 e1 = p1 - p0;
@@ -121,7 +123,7 @@ public:
 	    glm::vec3 hit_p2(info.hitPoint - p2);
 		c = glm::cross(edge2, hit_p2);
 	    if (glm::dot(n, c) < 0.0f) return false; // P is on the right side;
-
+		info.color = color;
 	    return true; // this ray hits the triangle
 
 		// glm::vec3 q = glm::cross(ray.direction , e2);
@@ -153,13 +155,14 @@ public:
 		// return true;
 	}
 	glm::vec3 p0, p1, p2;
+	glm::vec3 color;
 };
 
 //What I implement
 class Plane:public Object
 {
 public:
-	Plane(const glm::vec3 &p0, const glm::vec3 &n):p0(glm::normalize(p0)),n(glm::normalize(n)){};
+	Plane(const glm::vec3 &p0, const glm::vec3 &n, const glm::vec3 &color):p0(p0),n(glm::normalize(n)), color(color){};
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
 		float np = glm::dot(n, p0);
@@ -173,8 +176,10 @@ public:
 		info.material = &_material;
 		info.hitPoint = ray(t);
 		info.normal = n;
+		info.color = color;
 		// info.normal = n;
 		return true;
 	}
 	glm::vec3 p0, n;
+	glm::vec3 color;
 };

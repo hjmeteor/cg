@@ -35,7 +35,8 @@ public:
 	  time(std::numeric_limits<float>::infinity()),
 		hitPoint(0.0f),
 		normal(0.0f),
-		material(NULL)
+		material(NULL),
+		color(glm::vec3(1.0f))
 	{		
 	}
 
@@ -47,6 +48,7 @@ public:
 	float time;
 	//The material of the object that was intersected
 	const Material *material;
+	glm::vec3 color;
 
 	//Basic assignment operator
 	IntersectInfo &operator =(const IntersectInfo &rhs)
@@ -55,6 +57,7 @@ public:
 		material = rhs.material;
 		normal = rhs.normal;
 		time = rhs.time;
+		color = rhs.color;
 		return *this;
 	}
 };
