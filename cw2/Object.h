@@ -10,8 +10,9 @@ public:
 	//Material values used for lighting equations
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
-	glm::vec3 specular;	
+	glm::vec3 specular;
 	float specularExponent;
+	float refraction_index;
 	//TODO add further material values here such as reflection/refraction index
 };
 
@@ -40,7 +41,7 @@ protected:
 	Material _material;
 };
 
-// houzi
+//What I implement
 class Sphere:public Object
 {
 public:
@@ -61,18 +62,19 @@ public:
 			t = LdotD - q;
 		else
 			t = LdotD + q;
-	
+
 	 	info.time = t;
 		info.material = &_material;
 		info.hitPoint = ray(t);
-		info.normal = glm::normalize(ray(t) - center);
+		info.normal = ray(t) - center;
 		return true;
 	}
-	
+
 	float radius, radius2;
 	glm::vec3 center;
 };
 
+//What I implement
 class Triangle:public Object
 {
 public:
@@ -81,61 +83,100 @@ public:
 	{
 		glm::vec3 e1 = p1 - p0;
 		glm::vec3 e2 = p2 - p0;
-		glm::vec3 q = glm::cross(ray.direction , e2);
-		float a = glm::dot(e1, q);
-		if(a > -0.0001f and a < 0.0001f)
-			return false;
-		float f = 1 / a;
-		glm::vec3 s = ray.origin - p0;
-		// glm::vec3 s ;
-		// if(a > 0)
-		// 	 {s = ray.origin - p0;}
-		// else{
-		// 	s = p0 - ray.origin;
-		// 	a = -a;}
-		// 
-		float u = f * (glm::dot(s, q));
-		if(u < 0.0f | u > 1)
-		 	return false;
-		glm::vec3 r = glm::cross(s, e1);
-		float v = f * (glm::dot(ray.direction, r));
-		if(v < 0.0 or u + v > 1)
-			return false;
-		float t = f * (glm::dot(e2, q));
 		glm::vec3 n(glm::cross(e1, e2));
-		
+
+		float ndd = glm::dot(n, ray.direction);
+		// check if ray and plane are parallel ?
+		if (fabs(nnd) < 0.0001f){ // almost 0
+			return false;
+		}
+		float d = glm::dot(n, p0);
+		flaot t = -(glm::dot(n, ray.origin)) + d) / ndd
+
+		// check if the triangle is in behind the ray
+    	if (t < 0.0f){
+			return false; // the triangle is behind
+		}
 		info.time = t;
-		cout<<t;
 		info.material = &_material;
 		info.hitPoint = ray(t);
-		info.normal = glm::normalize(n);
 		info.normal = n;
+		// Step 2: inside-outside test
+	    glm::vec3 c; // vector perpendicular to triangle's plane
+
+	    // edge 0
+	    glm::vec3 edge0(p1 - p0);
+	    glm::vec3 hit_p0(info.hitPoint - p0);
+		c = glm::crossProduct(edge0, hit_p0);
+	    if (glm::dotProduct(n, c) < 0.0f) return false; // P is on the right side
+
+	    // edge 1
+		glm::vec3 edge1(p2 - p1);
+	    glm::vec3 hit_p1(info.hitPoint - p1);
+		c = glm::crossProduct(edge1, hit_p1);
+	    if (glm::dotProduct(n, c) < 0.0f) return false;// P is on the right side
+
+	    // edge 2
+		glm::vec3 edge2(p0 - p2);
+	    glm::vec3 hit_p2(info.hitPoint - p2);
+		c = glm::crossProduct(edge2, hit_p2);
+	    if (glm::dotProduct(n, c) < 0.0f) return false; // P is on the right side;
+
+	    return true; // this ray hits the triangle
+
+		// glm::vec3 q = glm::cross(ray.direction , e2);
+		// float a = glm::dot(e1, q);
+		// // check if ray and plane are parallel ?
+		// if(a > -0.0001f and a < 0.0001f) // almost 0
+		// 	return false;
+		// float f = 1.0f / a;
+		// glm::vec3 s = ray.origin - p0;
+		// // glm::vec3 s ;
+		// // if(a > 0)
+		// // 	 {s = ray.origin - p0;}
+		// // else{
+		// // 	s = p0 - ray.origin;
+		// // 	a = -a;}
+		// //
+		// float u = f * (glm::dot(s, q));
+		// if(u < 0.0f | u > 1.0f)
+		//  	return false;
+		// glm::vec3 r = glm::cross(s, e1);
+		// float v = f * (glm::dot(ray.direction, r));
+		// if(v < 0.0 or u + v > 1.0f)
+		// 	return false;
+		// float t = f * (glm::dot(e2, q));
+		// info.time = t;
+		// info.material = &_material;
+		// info.hitPoint = ray(t);
+		// info.normal = n;
 		// return true;
 	}
 	glm::vec3 p0, p1, p2;
 };
 
+//What I implement
 class Plane:public Object
 {
 public:
 	Plane(const glm::vec3 &p0, const glm::vec3 &n):p0(p0),n(n){};
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
+		n = glm::normalize(n);
+		p0 = glm::normalize(p0);
 		float np = glm::dot(n, p0);
-		float nd = glm::dot(n, ray.direction);
-		float no = glm::dot(n, ray.origin);
+		float nd = glm::dot(n, glm::normalize(ray.direction));
+		if(nd < 1e-6) return false;
+		float no = glm::dot(n, glm::normalize(ray.origin));
 		float t = (np - no) / nd;
-		if(t < 0)
-			return false;	
+		if(t < 0.0f)
+			return false;
 		info.time = t;
 		info.material = &_material;
 		info.hitPoint = ray(t);
-		info.normal = glm::normalize(n);
+		info.normal = n;
 		// info.normal = n;
 		return true;
 	}
 	glm::vec3 p0, n;
 };
-
-
-

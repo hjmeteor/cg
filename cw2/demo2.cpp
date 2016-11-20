@@ -3,13 +3,13 @@
 #include "Object.h"
 
 //What I implement
-//The DEPTH1 is that a ray from the eye through all objects in the scene, up to
+//The RECURSION_DEPTHE is that a ray from the eye through all objects in the scene, up to
 //a recursion depth of at least 3.
 
 //The INFINITY1 is used to initialize the nearest intersection distance, when
 //comparing the intersection of multiple objects at the same time which one is
 //nearer
-#define DEPTHE1 3
+#define RECURSION_DEPTHE 3
 #define INFINITY1 1e8
 
 //window resolution (default 640x480)
@@ -68,7 +68,7 @@ bool CheckIntersection(const Ray &ray, IntersectInfo &info)
 	float tNear = INFINITY1;
 	// Used to record the nearest object's information of intersection
 	IntersectInfo near_info;
-	bool if_intersect = false;
+	bool is_intersect = false;
 	// if(p.Intersect(ray, info) && info.time < tNear) {
 	// 	near_info = info;
 	// 	tNear = near_info.time;
@@ -82,14 +82,14 @@ bool CheckIntersection(const Ray &ray, IntersectInfo &info)
 	if(s.Intersect(ray, info) && info.time < tNear) {
 		near_info = info;
 		tNear = near_info.time;
-		if_intersect = true;
+		is_intersect = true;
 	}
 	if(s2.Intersect(ray, info) && info.time < tNear) {
 		near_info = info;
 		tNear = near_info.time;
-		if_intersect = true;
+		is_intersect = true;
 	}
-	if(if_intersect == true){
+	if(is_intersect == true){
 		info = near_info;
 		return true;
 	}
@@ -104,45 +104,120 @@ bool CheckIntersection(const Ray &ray, IntersectInfo &info)
 //returns either the time of intersection with an object (the coefficient t in the equation: RayPosition = RayOrigin + t*RayDirection) or zero to indicate no intersection
 
 //What I implement
+// float CastRay(Ray &ray, Payload &payload)
+// {
+// 	//Perform early termination here (use number of bounces)
+// 	//Check if the ray intersects something
+//
+// 	if(payload.numBounces == RECURSION_DEPTHE)
+// 		return 0.0f;
+// 	else{
+// 		IntersectInfo info;
+// 		if(CheckIntersection(ray,info)){
+// 			glm::vec3 lightPos(-60.0f, 90.0f, 100.0f);
+// 			// lightPos = glm:normalize(lightPos);
+// 			glm::vec3 norm = info.normal;
+// 			float diff = info.material -> diffuse.x;
+// 			float spec = info.material -> specular.x;
+// 			float ambient = info.material -> ambient.x;
+// 		//	set a value to the light intensity
+// 			float light_inten = 1.0f;
+// 		//	set a value to the specular intensity
+// 			float spec_inten = 80.0f;
+// 		//  calculate the cos_theta where theta is the angle between the normal vector of the vertex and the direction to the light source
+// 			float cos_theta = glm::dot(lightPos, norm);
+// 		//  calculate the cos_alpha where alpha is the angle between the reflected incoming light and the direction to the camera
+// 			// float cos_alpha = glm::dot(2 * glm::dot(lightPos, norm) * norm - lightPos, ray.direction);
+// 			glm::vec3 h = glm::normalize(lightPos + ray.direction);
+// 		//  calculate the diffuse reflection, specular reflection and the ambient
+// 			float d = fabs(light_inten * diff * cos_theta);
+// 			// float sp = fabs(light_inten * spec * pow(cos_alpha, spec_inten));
+// 			// float sp;
+//
+// 			float sp = light_inten * spec * pow(max(glm::dot(norm, h),0.0f), spec_inten);
+//
+// 			float a = fabs(light_inten * ambient);
+// 		//  The values of cos_theta and cos_alpha should be set to 0 if they are negative
+// 			payload.numBounces ++;
+// 			return a + d + sp;
+// 		}
+// 		else
+// 			return 0.0f;
+// 	}
+//
+// }
+
 float CastRay(Ray &ray, Payload &payload)
 {
 	//Perform early termination here (use number of bounces)
 	//Check if the ray intersects something
+	if(payload.numBounces < RECURSION_DEPTHE){
+		float refraction_index = info.material -> refraction_index;
+		glm::vec3 norm = info.normal;
+		Ray reflectionRay;
+		Ray refractionRay;
+		reflectionRay.origin = info.hitPoint;
+		reflectionRay.direction = glm::reflect(lightPos, norm);
+		refractionRay.origin = info.hitPoint;
+		refractionRay.direction = glm::refract(lightPos, norm, refraction_index);
+		float reflectionColor, refractionColor;
+		CastRay(reflectionRay, payload.numBounces + 1);
+		reflectionColor = payload.color.x;
+		CastRay(refractionColor, payload.numBounces + 1);
+		refractionColor = payload.color.y;
+		float kr, kt;
+		fresnel(
+            object->indexOfRefraction,
+            nHit,
+            ray.direction,
+            &Kr,
+            &Kt);
+		payload.color(reflectionColor * Kr + refractionColor * (1 - Kr));
+		return 1.0f;
+	}
+	IntersectInfo info;
+	if(CheckIntersection(ray,info)){
+		// lightPos = glm:normalize(lightPos);
+		glm::vec3 norm = info.normal;
+		float diff = info.material -> diffuse.x;
+		float spec = info.material -> specular.x;
+		float ambient = info.material -> ambient.x;
+		float specularExponent = info.material -> specularExponent;
 
-	if(payload.numBounces == DEPTH1)
-		return 0.0f;
-	else{
-		IntersectInfo info;
-		if(CheckIntersection(ray,info)){
-			glm::vec3 lightPos(-60.0f, 90.0f, 100.0f);
-			// lightPos = glm:normalize(lightPos);
-			glm::vec3 norm = info.normal;
-			float diff = info.material -> diffuse.x;
-			float spec = info.material -> specular.x;
-			float ambient = info.material -> ambient.x;
-		//	set a value to the light intensity
-			float light_inten = 1.0f;
-		//	set a value to the specular intensity
-			float spec_inten = 80.0f;
-		//  calculate the cos_theta where theta is the angle between the normal vector of the vertex and the direction to the light source
-			float cos_theta = glm::dot(lightPos, norm);
-		//  calculate the cos_alpha where alpha is the angle between the reflected incoming light and the direction to the camera
-			// float cos_alpha = glm::dot(2 * glm::dot(lightPos, norm) * norm - lightPos, ray.direction);
-			glm::vec3 h = glm::normalize(lightPos + ray.direction);
-		//  calculate the diffuse reflection, specular reflection and the ambient
-			float d = abs(light_inten * diff * cos_theta);
-			// float sp = abs(light_inten * spec * pow(cos_alpha, spec_inten));
-			// float sp;
+	//  calculate the cos_theta where theta is the angle between the normal vector of the vertex and the direction to the light source
+		float cos_theta = glm::dot(glm::normalize(lightPos), norm);
+	//  calculate the cos_alpha where alpha is the angle between the reflected incoming light and the direction to the camera
+		// float cos_alpha = glm::dot(2 * glm::dot(lightPos, norm) * norm - lightPos, ray.direction);
+		// using half-vector h to calculate specular coefficient. This way is faster than normal one.
+		glm::vec3 h = glm::normalize(lightPos + ray.direction);
+	//  calculate the diffuse reflection, specular reflection and the ambient
+		float d = light_inten * diff * cos_theta;
+		// float sp = fabs(light_inten * spec * pow(cos_alpha, spec_inten));
+		// float sp;
 
-			float sp = light_inten * spec * pow(max(glm::dot(norm, h),0.0f), spec_inten);
+		float sp = light_inten * spec * pow(max(glm::dot(norm, h),0.0f), specularExponent);
 
-			float a = abs(light_inten * ambient);
-		//  The values of cos_theta and cos_alpha should be set to 0 if they are negative
-			payload.numBounces ++;
-			return a + d + sp;
+		float a = light_inten * ambient;
+		d = max(d, 0.0f);
+		s = max(s, 0.0f);
+		a = max(a, 0.0f);
+
+	//  The values of cos_theta and cos_alpha should be set to 0 if they are negative
+		glm::vec3 color((a + d + sp) * 0.0f, (a + d + sp) * 0.0f, (a + d + sp) * 1.0f);
+		payload.color = color;
+
+		//comput shadow
+		Ray shadowRay;
+		shadowRay.direction = lightPos - info.hitPoint;
+		shadowRay.origin = info.hitPoint;
+		bool is_shadow = false;
+		if(CheckIntersection(shadowRay, info)){
+			// hit point is in shadow so just return
+			glm::vec3 color(0.0f);
+			payload.color = color;
+			return 1.0f;
 		}
-		else
-			return 0.0f;
+		return 1.0f;
 	}
 
 }
@@ -208,11 +283,16 @@ void DemoDisplay()
 
 			//Default color is white
 			glm::vec3 color(1.0f);
-			// glm::vec3 c(0.0f);
-			// Sphere s(c, 1.0f);
+
+			//Default light position
+			glm::vec3 lightPos(-60.0f, 90.0f, 100.0f);
+			//	set a value to the light intensity
+			float light_inten = 1.0f;
+
 			//Cast our ray into the scene
+			//Payload record the final color after cast ray
 			if(CastRay(ray,payload) > 0.0f){// > 0.0f indicates an intersection
-				color = ray.direction;
+				color = payload.color.x;
 			}
 			//Get OpenGL to render the pixel with the color from the ray
 			glColor3f(color.x,color.y,color.z);
