@@ -11,7 +11,11 @@
 #include <fstream>
 #include <cstring>
 
-#include <GL/glut.h>
+//#include <GL/glut.h>
+//The following three include is for running on xcode
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
