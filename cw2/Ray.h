@@ -6,27 +6,6 @@
 
 class Material;
 //forward declaration of Material class so we can include it in the IntersectInfo class
-//class Material(const glm::vec3 &, const glm::vec3 &, const glm::vec3 &, const glm::vec3 &, const float &, const float &, const float &);
-//What I done
-//{
-//public:
-//    //What I done
-//    //Redefines the constructor declaration for class material
-//    Material(const glm::vec3 &color = glm::vec3(1.0f), const glm::vec3 &ambient = glm::vec3(0.6f), const glm::vec3 &diffuse = glm::vec3(0.6f), const glm::vec3 &specular = glm::vec3(1.0f), const float &specularExponent = 10.0f, const float &reflection_index = 0.8f, const float &refraction_index = 0.5f);
-//    //Material values used for lighting equations
-//    //What I done
-//    //add color value
-//    glm::vec3 color;
-//    glm::vec3 ambient;
-//    glm::vec3 diffuse;
-//    glm::vec3 specular;
-//    float specularExponent;
-//    //What I done
-//    //add material values for reflection and refraction index
-//    float reflection_index;
-//    float refraction_index;
-//    //TODO add further material values here such as reflection/refraction index
-//};
 
 //Defines a ray object
 //A ray is defined by its origin and its normalised direction

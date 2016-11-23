@@ -24,7 +24,6 @@ public:
 	//TODO add further material values here such as reflection/refraction index
 };
 
-
 //Interface for an objet in the scene
 class Object
 {
@@ -133,35 +132,7 @@ public:
 		c = glm::cross(edge2, hit_p2);
 	    if (glm::dot(n, c) < 0.0f) return false; // P is on the right side;
 	    return true; // this ray hits the triangle
-
-		// glm::vec3 q = glm::cross(ray.direction , e2);
-		// float a = glm::dot(e1, q);
-		// // check if ray and plane are parallel ?
-		// if(a > -0.0001f and a < 0.0001f) // almost 0
-		// 	return false;
-		// float f = 1.0f / a;
-		// glm::vec3 s = ray.origin - p0;
-		// // glm::vec3 s ;
-		// // if(a > 0)
-		// // 	 {s = ray.origin - p0;}
-		// // else{
-		// // 	s = p0 - ray.origin;
-		// // 	a = -a;}
-		// //
-		// float u = f * (glm::dot(s, q));
-		// if(u < 0.0f | u > 1.0f)
-		//  	return false;
-		// glm::vec3 r = glm::cross(s, e1);
-		// float v = f * (glm::dot(ray.direction, r));
-		// if(v < 0.0 or u + v > 1.0f)
-		// 	return false;
-		// float t = f * (glm::dot(e2, q));
-		// info.time = t;
-		// info.material = &_material;
-		// info.hitPoint = ray(t);
-		// info.normal = n;
-		// return true;
-	}
+    }
 	glm::vec3 p0, p1, p2;
 	glm::vec3 color;
     Material material;

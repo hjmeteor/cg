@@ -2,6 +2,8 @@
 
 #include "header.h"
 
+//What I done
+//Re-modified the material constructor initialization method
 Material::Material(const glm::vec3 &color, const glm::vec3 &ambient, const glm::vec3 &diffuse , const glm::vec3 &specular, const float &specularExponent, const float &reflection_index, const float &refraction_index):
 color(color),
 ambient(ambient),//Default to white
