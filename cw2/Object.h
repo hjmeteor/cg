@@ -6,12 +6,19 @@
 class Material
 {
 public:
-	Material();
+    //What I done
+    //Redefines the constructor declaration for class material
+    Material(const glm::vec3 &color = glm::vec3(1.0f), const glm::vec3 &ambient = glm::vec3(0.6f), const glm::vec3 &diffuse = glm::vec3(0.6f), const glm::vec3 &specular = glm::vec3(1.0f), const float &specularExponent = 10.0f, const float &reflection_index = 0.0f, const float &refraction_index = 0.0f);
 	//Material values used for lighting equations
+    //What I done
+    //add color value
+    glm::vec3 color;
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
 	float specularExponent;
+    //What I done
+    //add material values for reflection and refraction index
 	float reflection_index;
 	float refraction_index;
 	//TODO add further material values here such as reflection/refraction index
@@ -42,11 +49,12 @@ protected:
 	Material _material;
 };
 
-//What I implement
+//What I done
+//Constructor class Sphere inheritance class Object
 class Sphere:public Object
 {
 public:
-	Sphere(const glm::vec3 &c, const float &r, const glm::vec3 &color):radius(r), radius2(r * r), center(c), color(color){};
+	Sphere(const glm::vec3 &c, const float &r, const Material &material):radius(r), radius2(r * r), center(c), material(material){};
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
 		float t = 0.0;
@@ -65,23 +73,24 @@ public:
 			t = LdotD + q;
 
 	 	info.time = t;
-		info.material = &_material;
 		info.hitPoint = ray(t);
 		info.normal = ray(t) - center;
-		info.color = color;
+        info.material = &material;
 		return true;
 	}
 
 	float radius, radius2;
-	glm::vec3 center;
-	glm::vec3 color;
+    glm::vec3 center;
+    Material material;
 };
 
-//What I implement
+//What I done
+//Constructor class Triangle inheritance class Object
 class Triangle:public Object
 {
 public:
-	Triangle(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &color):p0(p0), p1(p1), p2(p2), color(color){};
+	Triangle(const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2, const Material &material):p0(p0), p1(p1), p2(p2), material(material){};
+    
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
 		glm::vec3 e1 = p1 - p0;
@@ -100,7 +109,7 @@ public:
 			return false; // the triangle is behind
 		}
 		info.time = t;
-		info.material = &_material;
+		info.material = &material;
 		info.hitPoint = ray(t);
 		info.normal = n;
 		// Step 2: inside-outside test
@@ -123,7 +132,6 @@ public:
 	    glm::vec3 hit_p2(info.hitPoint - p2);
 		c = glm::cross(edge2, hit_p2);
 	    if (glm::dot(n, c) < 0.0f) return false; // P is on the right side;
-		info.color = color;
 	    return true; // this ray hits the triangle
 
 		// glm::vec3 q = glm::cross(ray.direction , e2);
@@ -156,30 +164,33 @@ public:
 	}
 	glm::vec3 p0, p1, p2;
 	glm::vec3 color;
+    Material material;
 };
 
-//What I implement
+//What I done
+//Constructor class Plane inheritance class Object
 class Plane:public Object
 {
 public:
-	Plane(const glm::vec3 &p0, const glm::vec3 &n, const glm::vec3 &color):p0(p0),n(glm::normalize(n)), color(color){};
+	Plane(const glm::vec3 &p0, const glm::vec3 &n, const Material &material):p0(p0),n(n), material(material){};
+    
 	bool Intersect(const Ray &ray, IntersectInfo &info) const
 	{
-		float np = glm::dot(n, p0);
-		float nd = glm::dot(n, glm::normalize(ray.direction));
-		if(nd < 1e-6) return false;
-		float no = glm::dot(n, glm::normalize(ray.origin));
-		float t = (np - no) / nd;
-		if(t < 0.0f)
-			return false;
-		info.time = t;
-		info.material = &_material;
-		info.hitPoint = ray(t);
-		info.normal = n;
-		info.color = color;
-		// info.normal = n;
-		return true;
+        float np = glm::dot(glm::normalize(n), (p0) - (ray.origin));
+		float nd = glm::dot(glm::normalize(n), (ray.direction));
+        if(abs(nd) > 0.0001f){
+            float t = (np) / nd;
+            if(t >= 0.0f){
+                info.time = t;
+                info.material = &material;
+                info.hitPoint = ray(t);
+                info.normal = n;
+                return true;
+            }
+        }
+        return false;
 	}
 	glm::vec3 p0, n;
 	glm::vec3 color;
+    Material material;
 };
